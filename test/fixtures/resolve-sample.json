@@ -1,0 +1,38 @@
+{
+  "ok": true,
+  "data": {
+    "bvid": "BV1U7V66FEiK",
+    "title": "测试视频",
+    "owner": "UP主",
+    "cover": "http://i0.hdslb.com/x.jpg",
+    "duration": "2:59",
+    "pages": 1,
+    "views": 100,
+    "pagesDetail": [
+      {
+        "cid": 38807668659,
+        "page": 1,
+        "pageTitle": "测试",
+        "duration": "2:59",
+        "video": [
+          { "qn": 112, "codecId": 7,  "codecName": "H.264/AVC", "width": 1920, "height": 1080, "frameRate": "30", "label": "x", "url": "https://v.example/1080h264.m4s", "backup": [] },
+          { "qn": 112, "codecId": 12, "codecName": "H.265/HEVC", "width": 1920, "height": 1080, "frameRate": "30", "label": "x", "url": "https://v.example/1080h265.m4s", "backup": [] },
+          { "qn": 112, "codecId": 13, "codecName": "AV1", "width": 1920, "height": 1080, "frameRate": "30", "label": "x", "url": "https://v.example/1080av1.m4s", "backup": [] },
+          { "qn": 80,  "codecId": 7,  "codecName": "H.264/AVC", "width": 1920, "height": 1080, "frameRate": "30", "label": "x", "url": "https://v.example/1080p.m4s", "backup": [] },
+          { "qn": 64,  "codecId": 7,  "codecName": "H.264/AVC", "width": 1280, "height": 720, "frameRate": "30", "label": "x", "url": "https://v.example/720.m4s", "backup": [] }
+        ],
+        "audio": [
+          { "aq": 30280, "label": "高质量", "codecs": "mp4a.40.2", "url": "https://a.example/30280.m4s", "backup": [] },
+          { "aq": 30216, "label": "低质量", "codecs": "mp4a.40.2", "url": "https://a.example/30216.m4s", "backup": [] }
+        ],
+        "dolby": [],
+        "flac": null,
+        "durl": [],
+        "support": [],
+        "subtitles": [
+          { "lan": "zh-CN", "lanDoc": "中文", "url": "https://s.example/zh.json" }
+        ]
+      }
+    ]
+  }
+}

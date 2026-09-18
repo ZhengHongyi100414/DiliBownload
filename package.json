@@ -1,0 +1,23 @@
+{
+  "name": "dilibownload",
+  "version": "1.0.0",
+  "description": "Web-based video link parser: scan-QR login + resolve stream URLs + in-browser ffmpeg.wasm remux. Server parses and returns links only; media processing happens in your browser.",
+  "private": true,
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test \"test/*.test.mjs\"",
+    "test:browser": "node tools/test-browser-wasm.mjs"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "express": "^4.19.2",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1",
+    "puppeteer-core": "^25.11.0"
+  }
+}

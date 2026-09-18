@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DiliBownload · 视频链接解析</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --card: #ffffff;
+      --accent: #fb7299;
+      --text: #1f2329;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --ok: #16a34a;
+      --warn: #d97706;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.5;
+    }
+    .wrap { max-width: 960px; margin: 0 auto; padding: 32px 20px 64px; }
+    header {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      margin-bottom: 28px; flex-wrap: wrap;
+    }
+    .logo { font-size: 22px; font-weight: 700; color: var(--accent); }
+    .logo small { color: var(--muted); font-weight: 400; }
+    .login-box { display: flex; align-items: center; gap: 10px; }
+
+    .pill { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; }
+    .pill.off { background: #f0f1f3; color: var(--muted); }
+    .pill.on { background: #e4f5e8; color: var(--ok); }
+
+    button {
+      border: none; border-radius: 8px; padding: 9px 16px; font-size: 14px; cursor: pointer;
+      background: var(--accent); color: #fff; transition: .15s;
+    }
+    button:hover { opacity: .9; }
+    button.secondary { background: #f0f1f3; color: var(--text); }
+    button.danger { background: #ffe3e3; color: #b42318; }
+
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 20px; margin-bottom: 20px;
+    }
+    .input-row { display: flex; gap: 10px; }
+    input[type=text] {
+      flex: 1; padding: 11px 14px; font-size: 14px; border: 1px solid var(--border);
+      border-radius: 8px; outline: none;
+    }
+    input[type=text]:focus { border-color: var(--accent); }
+
+    .page-box { margin-top: 4px; }
+    .page-head { font-size: 15px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .badge { background: #f1f2f4; padding: 2px 8px; border-radius: 6px; font-size: 12px; color: var(--muted); }
+
+    /* DownKyi-style pickers */
+    .picker-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 6px; }
+    .picker-group { display: flex; flex-direction: column; gap: 2px; }
+    .picker-group label { font-size: 12px; color: var(--muted); }
+    .picker-group select {
+      min-width: 130px; padding: 7px 10px; font-size: 13px; border: 1px solid var(--border);
+      border-radius: 8px; background: #fff; cursor: pointer; outline: none;
+    }
+    .picker-group select:focus { border-color: var(--accent); }
+
+    .dl-options { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 6px; }
+    .dl-options .t { font-size: 12px; color: var(--muted); margin-right: 2px; }
+    .checkbox-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; cursor: pointer; }
+    .checkbox-pill input { accent-color: var(--accent); width: 14px; height: 14px; }
+
+    .gen-btn {
+      padding: 8px 14px; font-size: 13px; border: none; border-radius: 8px; cursor: pointer;
+      background: var(--accent); color: #fff; margin-top: 8px;
+    }
+    .gen-btn:hover { opacity: .9; }
+    .gen-result { margin-top: 8px; }
+    .url-item {
+      display: flex; align-items: center; gap: 8px; background: #f6f7f9; border: 1px solid var(--border);
+      border-radius: 8px; padding: 7px 10px; margin-top: 5px; font-size: 12.5px; word-break: break-all;
+    }
+    .url-item .tag { background: #e8ebef; padding: 1px 8px; border-radius: 6px; font-size: 11.5px; color: var(--muted); flex-shrink: 0; }
+    .url-item .u { flex: 1; color: var(--text); }
+    .url-item a { color: var(--accent); text-decoration: none; font-size: 12px; flex-shrink: 0; }
+    .copy-here { color: #2563eb; cursor: pointer; font-size: 12px; flex-shrink: 0; }
+    .empty-note { color: var(--muted); font-size: 13px; margin-top: 8px; }
+    .login-hint { color: var(--warn); font-size: 12.5px; margin-top: 8px; }
+    .mux-bar { margin-top: 12px; background: #f0f4fb; border: 1px dashed var(--border); border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .mux-bar .t { font-size: 12px; color: var(--muted); }
+    .mux-btn { padding: 7px 12px; font-size: 12.5px; border: 1px solid #c7d7f0; border-radius: 8px; background: #eaf2ff; color: #1e40af; cursor: pointer; }
+    .mux-btn:hover { background: #dbe7fb; }
+    .mux-status { font-size: 12px; color: var(--muted); }
+    .mux-progress { height: 5px; width: 100%; background: #e5e7eb; border-radius: 3px; overflow: hidden; margin-top: 4px; }
+    .mux-progress i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+
+    /* video metadata header */
+    .video-meta { margin-top: 4px; }
+    .video-meta strong { font-size: 18px; }
+    .video-meta .line { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+    .modal-bg {
+      position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex;
+      align-items: center; justify-content: center; z-index: 50; opacity: 0; transition: .15s;
+      pointer-events: none;
+    }
+    .modal-bg.show { opacity: 1; pointer-events: auto; }
+    .modal { width: 320px; background: #fff; border-radius: 14px; padding: 24px; text-align: center; }
+    .modal h3 { margin-bottom: 16px; font-size: 17px; }
+    .qr { width: 200px; height: 200px; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+    .qr img, .qr canvas { width: 100%; height: 100%; }
+    .qr-status { margin-top: 4px; font-size: 13px; }
+    #qr-close { margin-top: 10px; width: 100%; }
+
+    .toast {
+      position: fixed; top: 20px; right: 20px; background: #111; color: #fff;
+      padding: 12px 18px; border-radius: 8px; font-size: 13px; z-index: 100; opacity: 0; transition: .2s;
+    }
+    .toast.show { opacity: 1; }
+
+    .error { color: #b42318; }
+    .muted { color: var(--muted); }
+    .spinner {
+      display: inline-block; width: 16px; height: 16px; border: 2px solid #ddd;
+      border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .tips { font-size: 12.5px; color: var(--muted); margin-top: 8px; line-height: 1.7; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">DiliBownload <small>· 解析并生成下载链接</small></div>
+    <div class="login-box">
+      <span id="login-pill" class="pill off">未登录</span>
+      <button id="login-btn" class="secondary">扫码登录</button>
+      <button id="logout-btn" class="danger" style="display:none">退出</button>
+    </div>
+  </header>
+
+  <div class="card">
+    <div class="input-row">
+      <input id="url-input" type="text" placeholder="粘贴视频链接或 BV / AV 号" autofocus>
+      <button id="resolve-btn">解析视频</button>
+    </div>
+    <div class="tips">
+      服务端负责解析视频信息并返回媒体地址，<b>不主动中转/代理下载</b>。
+      「复制链接」后用下载工具（IDM / aria2 / 浏览器）直接下载；或点「合成 MP4」让<b>本机 ffmpeg</b> 合并转码；浏览器还支持 <b>ffmpeg.wasm</b> 纯前端合并（不经服务器转码，首次需加载约 30MB）。部分清晰度（1080P 及以上、FLAC/Dolby 音质）需登录后才能解析。
+    </div>
+  </div>
+
+  <div id="result"></div>
+</div>
+
+<!-- QR login modal -->
+<div class="modal-bg" id="qr-modal">
+  <div class="modal">
+    <h3>扫码登录</h3>
+    <div class="qr" id="qr-host"><span class="muted">加载中…</span></div>
+    <div class="qr-status muted" id="qr-status">请用对应 App 扫码</div>
+    <p class="error" id="qr-error" style="display:none"></p>
+    <button id="qr-close">关闭</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/app.js"></script>
+<script type="module" src="/ffmpeg-loader.js"></script>
+</body>
+</html>
