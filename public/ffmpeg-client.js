@@ -49,16 +49,16 @@ export async function muxInBrowser({ videoUrl, audioUrl = null, title = 'video',
     }
   }
 
-  if (onPhase) onPhase('loading ffmpeg.wasm…');
+  if (onPhase) onPhase('加载下载组件…');
   await ffmpegInstance.load({ coreURL: CORE_PATH, wasmURL: CORE_WASM });
 
   // Download media into ffmpeg's FS.
-  if (onPhase) onPhase('下载视频轨…');
+  if (onPhase) onPhase('正在获取视频…');
   const videoData = await fetchMedia(videoUrl);
   await ffmpegInstance.writeFile('video.m4s', videoData);
   let hasAudio = false;
   if (audioUrl) {
-    if (onPhase) onPhase('下载音频轨…');
+    if (onPhase) onPhase('正在获取音频…');
     const audioData = await fetchMedia(audioUrl);
     await ffmpegInstance.writeFile('audio.m4s', audioData);
     hasAudio = true;
@@ -67,7 +67,7 @@ export async function muxInBrowser({ videoUrl, audioUrl = null, title = 'video',
   const safeTitle = String(title || 'video').replace(/[\\/:*?"<>|]/g, '_').replace(/\s+/g, '_').slice(0, 80);
   const outName = `${safeTitle}.${mode}.mp4`;
 
-  if (onPhase) onPhase(mode === 'copy' ? '合并中…' : '转码中…');
+  if (onPhase) onPhase(mode === 'copy' ? '正在生成 MP4 文件…' : '正在生成兼容格式的 MP4（较慢，请耐心等待）…');
   const args = ['-hide_banner', '-y', '-i', 'video.m4s'];
   if (hasAudio) args.push('-i', 'audio.m4s');
   if (mode === 'copy') {
@@ -82,7 +82,7 @@ export async function muxInBrowser({ videoUrl, audioUrl = null, title = 'video',
   const rc = await ffmpegInstance.exec(args);
   if (rc !== 0) throw new Error(`ffmpeg 执行失败 (code ${rc})`);
 
-  if (onPhase) onPhase('读取结果…');
+  if (onPhase) onPhase('马上完成…');
   const data = await ffmpegInstance.readFile(outName);
   const blob = new Blob([data.buffer], { type: 'video/mp4' });
   const url = URL.createObjectURL(blob);

@@ -203,10 +203,11 @@
     }
 
     const audioOpts = [];
-    const seenAq = new Set();
     for (const a of page.audio || []) { audioOpts.push({ value: `a-${a.aq}`, text: a.label || `音质 ${a.aq}`, url: a.url, aq: a.aq }); }
     for (const d of page.dolby || []) { audioOpts.push({ value: `dolby`, text: 'Dolby Atmos', url: d.url, aq: 30250 }); }
     if (page.flac) audioOpts.push({ value: 'flac', text: 'Hi-Res 无损 (FLAC)', url: page.flac.url, aq: 30251 });
+    // 高质量 (30280) 排最前作为默认选中项
+    audioOpts.sort((a, b) => (b.aq === 30280 ? 1 : 0) - (a.aq === 30280 ? 1 : 0) || b.aq - a.aq);
 
     const hasDash = video.length > 0;
     const hasDurl = durl.length > 0;
@@ -407,14 +408,14 @@
     let muxBar = '';
     if (selVideo && typeof window.__diliWasm !== 'undefined' && window.__diliWasm) {
       muxBar = `<div class="mux-bar">
-        <span class="t">浏览器内合成 MP4（ffmpeg.wasm，不经服务器转码）：</span>
-        <button class="mux-btn" data-wasmmux="${uid}" data-mode="copy" title="流拷贝合并，保持原编码（H.264/HEVC/AV1），速度快">合并 MP4（快）</button>
-        <button class="mux-btn" data-wasmmux="${uid}" data-mode="transcode" title="浏览器内重编码为 H.264 + AAC，兼容性好，较慢">转码 MP4（兼容）</button>
+        <span class="t">已选好画质和音质，直接下载成 MP4：</span>
+        <button class="mux-btn" data-wasmmux="${uid}" data-mode="copy" title="速度快的下载方式，MP4 文件已经过优化，但对少数播放器兼容性稍差">开始下载（快速）</button>
+        <button class="mux-btn" data-wasmmux="${uid}" data-mode="transcode" title="较慢的下载方式，MP4 文件在任何设备和播放器上都能播放">开始下载（兼容）</button>
         <span class="mux-status" data-wasmstatus="${uid}"></span>
         <div class="mux-progress" data-wasmbar="${uid}"><i></i></div>
       </div>`;
     }
-    resultBox.innerHTML = html + muxBar;
+    resultBox.innerHTML = muxBar + html;
   }
 
   // ---- shared: resolve selected video/audio URLs ----
@@ -451,7 +452,7 @@
 
     if (bar) bar.style.width = '0%';
     [...document.querySelectorAll(`[data-wasmmux="${uid}"]`)].forEach((b) => b.disabled = true);
-    statusEl.textContent = '准备浏览器 ffmpeg.wasm…';
+    statusEl.textContent = '准备下载组件…（首次需加载约 30MB）';
 
     try {
       await window.__diliWasm.muxInBrowser({
