@@ -40,7 +40,7 @@ DiliBownload/
 
 ```bash
 npm install
-npm start        # 默认 http://localhost:3000，可用 PORT 环境变量改端口
+npm start        # 默认 http://localhost:40031，可用 PORT 环境变量改端口
 ```
 
 ## 测试

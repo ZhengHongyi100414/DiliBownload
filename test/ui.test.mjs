@@ -17,7 +17,7 @@ const mockResolve = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 
 
 const dom = new JSDOM(html, {
   runScripts: 'outside-only',
-  url: 'http://localhost:3000/',
+  url: 'http://localhost:40031/',
   resources: 'usable',
 });
 const { window } = dom;

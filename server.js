@@ -8,7 +8,7 @@ import { LoginSession } from './src/login.js';
 import { resolveVideo } from './src/video.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 40031;
 
 const app = express();
 app.use(express.json());

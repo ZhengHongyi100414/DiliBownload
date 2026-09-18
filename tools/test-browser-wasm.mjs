@@ -6,7 +6,7 @@
 import fs from 'node:fs';
 import puppeteer from 'puppeteer-core';
 
-const BASE = process.env.TEST_BROWSER_BASE || 'http://localhost:3000';
+const BASE = process.env.TEST_BROWSER_BASE || 'http://localhost:40031';
 const CANDIDATES = [
   'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
   'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
