@@ -37,6 +37,17 @@
         pill.className = 'pill on';
         logoutBtn.style.display = '';
         loginBtn.style.display = 'none';
+      } else if (s.state === 'expired') {
+        pill.textContent = '登录已失效，请重新扫码';
+        pill.className = 'pill off';
+        logoutBtn.style.display = 'none';
+        loginBtn.style.display = '';
+      } else if (s.state === 'error') {
+        pill.textContent = '登录状态未知（网络异常）';
+        pill.className = 'pill off';
+        logoutBtn.style.display = 'none';
+        loginBtn.style.display = 'none'; // keep current cookies; retry shortly
+        setTimeout(refreshLoginState, 8000);
       } else {
         pill.textContent = '未登录';
         pill.className = 'pill off';
@@ -58,7 +69,7 @@
     errEl.style.display = 'none';
     modal.classList.add('show');
     host.innerHTML = '<span class="muted">加载中…</span>';
-    status.textContent = '请用 B 站 App 扫码';
+    status.textContent = '请用对应 App 扫码';
     clearInterval(pollTimer);
 
     let qrcodeKey = null;
@@ -88,15 +99,26 @@
         const s = await api(`/api/login/poll?qrcode_key=${encodeURIComponent(qrcodeKey)}`);
         if (s.code === 86101) status.textContent = '请用对应 App 扫码';
         else if (s.code === 86090) status.textContent = '已在手机确认？等待…';
-        else if (s.code === 86038) { status.textContent = '二维码已过期，点击「关闭」重新扫码'; clearInterval(pollTimer); }
+        else if (s.code === 86038) {
+          // expired -> auto-refresh a fresh QR so the user doesn't have to close/reopen
+          clearInterval(pollTimer);
+          status.textContent = '二维码已过期，正在刷新…';
+          setTimeout(() => startQrLogin(), 800);
+        }
         else if (s.code === 0) {
           clearInterval(pollTimer);
-          status.textContent = '✅ 登录成功';
-          setTimeout(() => {
-            modal.classList.remove('show');
-            refreshLoginState();
-            toast('登录成功');
-          }, 700);
+          if (s.verified && s.verified.isLogin === false) {
+            // server-side verify failed: landing chain didn't complete
+            status.textContent = '登录未完成，正在重试…';
+            setTimeout(() => startQrLogin(), 800);
+          } else {
+            status.textContent = '✅ 登录成功';
+            setTimeout(() => {
+              modal.classList.remove('show');
+              refreshLoginState();
+              toast('登录成功');
+            }, 700);
+          }
         }
       } catch (e) { /* poll transient */ }
     }, 2000);
@@ -506,6 +528,35 @@
   function escapeAttr(s) {
     return escapeHtml(s);
   }
+
+  // ---- wasm status pill (bottom-right) ----
+  const pill = $('wasm-pill');
+  const pillTextEl = pill ? pill.querySelector('#wasm-pill-text') : null;
+  const PILL_TEXT = {
+    idle: '组件待加载',
+    loading: '组件加载中…',
+    ready: '组件已就绪',
+    error: '组件加载失败，点击重试',
+  };
+
+  function watchWasm(attempt = 0) {
+    if (attempt > 50) return; // give up after ~15s (loader absent, e.g. tests)
+    if (typeof window.__diliWasm === 'undefined' || !window.__diliWasm.getState) {
+      setTimeout(() => watchWasm(attempt + 1), 300);
+      return;
+    }
+    window.__diliWasm.onStatus(({ state, error }) => {
+      pill.className = `wasm-pill ${state}`;
+      if (pillTextEl) pillTextEl.textContent = PILL_TEXT[state] || state;
+      pill.title = state === 'error' ? `加载失败：${error || '未知原因'}。点击重试` : '下载组件状态（点击重试）';
+    });
+    pill.addEventListener('click', () => {
+      if (window.__diliWasm.getState().state === 'error') {
+        window.__diliWasm.preloadWasm().catch(() => {});
+      }
+    });
+  }
+  watchWasm();
 
   await refreshLoginState();
 })();

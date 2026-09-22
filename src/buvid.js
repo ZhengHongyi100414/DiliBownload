@@ -23,6 +23,8 @@ let currentExpiry = 0;
 export async function ensureBuvidJar(jar, force = false) {
   const now = Date.now();
   if (!force && current && currentExpiry > now) {
+    // memory hit: still apply to THIS jar (a fresh session's jar is empty)
+    applyToJar(jar, current.b_3, current.b_4);
     return current;
   }
 
@@ -55,10 +57,13 @@ export async function ensureBuvidJar(jar, force = false) {
 }
 
 function applyToJar(jar, b3, b4) {
-  const all = jar.all;
-  if (b3) all[extractBuvidName(b3)] = extractBuvidValue(b3);
-  if (b4) all[extractBuvidName(b4)] = extractBuvidValue(b4);
-  jar.setAll(all);
+  // Bilibili's finger/spi returns bare values (no "name=" prefix), so cookie
+  // names are fixed: buvid3/buvid4. Write via the jar's own API so persistence
+  // actually happens (jar.all returns a fresh object for an empty store).
+  const cookies = { ...jar.all };
+  if (b3) cookies.buvid3 = extractBuvidValue(b3.includes('=') ? b3 : `buvid3=${b3}`);
+  if (b4) cookies.buvid4 = extractBuvidValue(b4.includes('=') ? b4 : `buvid4=${b4}`);
+  jar.setAll(cookies);
 }
 
 function extractBuvidName(pair) { return pair.includes('=') ? pair.slice(0, pair.indexOf('=')) : pair; }

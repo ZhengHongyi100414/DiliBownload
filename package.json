@@ -13,6 +13,7 @@
   "license": "MIT",
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.12.15",
+    "cookie-parser": "^1.4.7",
     "express": "^4.19.2",
     "qrcode": "^1.5.4"
   },

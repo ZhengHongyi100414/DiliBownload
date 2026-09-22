@@ -9,6 +9,50 @@
 let FFmpegLib = null;   // { FFmpeg } from @ffmpeg/ffmpeg
 let ffmpegInstance = null;
 
+// ---- preload + status tracking ----
+// state: 'idle' | 'loading' | 'ready' | 'error'
+let wasmState = 'idle';
+let wasmError = null;
+const stateListeners = new Set();
+const progressListeners = new Set();
+
+export function getState() {
+  return { state: wasmState, error: wasmError };
+}
+export function onStatus(cb) { stateListeners.add(cb); cb(getState()); }
+
+async function setState(s, err = null) {
+  wasmState = s;
+  wasmError = err || null;
+  for (const cb of stateListeners) {
+    try { cb(getState()); } catch { /* listener error */ }
+  }
+}
+
+export async function preloadWasm() {
+  if (wasmState === 'ready' || wasmState === 'loading') return;
+  await setState('loading');
+  try {
+    const lib = await importLib();
+    if (!ffmpegInstance) {
+      ffmpegInstance = new lib.FFmpeg();
+      ffmpegInstance.on('progress', ({ progress }) => {
+        progressListeners.forEach((cb) => { try { cb(progress); } catch { /* ignore */ } });
+      });
+    }
+    await ffmpegInstance.load({ coreURL: CORE_PATH, wasmURL: CORE_WASM });
+    await setState('ready');
+  } catch (e) {
+    // reset so a later retry can run; remember the error for the status pill
+    ffmpegInstance = null;
+    await setState('error', e.message);
+    throw e;
+  }
+}
+
+// progress fan-out (used by muxInBrowser via onProgress)
+export function onProgressEvent(cb) { progressListeners.add(cb); }
+
 const CORE_PATH = '/lib/ffmpeg-core.esm.js';
 const CORE_WASM = '/lib/ffmpeg-core.wasm';
 
@@ -36,23 +80,14 @@ async function fetchMedia(url) {
  * @returns {Promise<void>} downloads the result mp4 when done.
  */
 export async function muxInBrowser({ videoUrl, audioUrl = null, title = 'video', mode = 'copy', onProgress, onPhase } = {}) {
-  const lib = await importLib();
-  const { FFmpeg } = lib;
-
-  if (!ffmpegInstance) {
-    ffmpegInstance = new FFmpeg();
-    ffmpegInstance.on('log', ({ type, message }) => {
-      if (type === 'stdout' && onPhase) onPhase(message);
-    });
-    if (onProgress) {
-      ffmpegInstance.on('progress', ({ progress }) => onProgress(progress));
-    }
+  // Ensure the wasm core is loaded (preloaded in background; this awaits if still
+  // loading, or retries after a failure).
+  if (wasmState !== 'ready') {
+    if (onPhase) onPhase('加载下载组件…');
+    await preloadWasm();
   }
+  if (!ffmpegInstance) throw new Error('下载组件未就绪');
 
-  if (onPhase) onPhase('加载下载组件…');
-  await ffmpegInstance.load({ coreURL: CORE_PATH, wasmURL: CORE_WASM });
-
-  // Download media into ffmpeg's FS.
   if (onPhase) onPhase('正在获取视频…');
   const videoData = await fetchMedia(videoUrl);
   await ffmpegInstance.writeFile('video.m4s', videoData);

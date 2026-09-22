@@ -13,10 +13,10 @@ function ensureDataDir() {
 }
 
 export class CookiesJar {
-  // { domainBare -> [{name, value}] }
-  constructor(domain = 'bilibili.com') {
+  // { domainBare -> {name: value} }
+  constructor(domain = 'bilibili.com', { file = null } = {}) {
     this.domain = domain;
-    this.file = path.join(DATA_DIR, 'cookies.json');
+    this.file = file || path.join(DATA_DIR, 'cookies.json');
     this.store = {};
     ensureDataDir();
     this.load();

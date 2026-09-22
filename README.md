@@ -20,6 +20,7 @@ DiliBownload/
 ├── server.js            # Express 入口 + REST 路由（登录/解析/流式转发）
 ├── src/
 │   ├── http.js          # HTTP 客户端 + Cookie jar 持久化 + 手动重定向跟随
+│   ├── sessions.js      # 每客户端会话注册表（dili_sid → 独立 cookie jar）
 │   ├── wbi.js           # WBI 签名（mixin key / w_rid 计算）+ 密钥提取
 │   ├── buvid.js         # 游客设备指纹引导
 │   ├── login.js         # 扫码登录 + 二维码 SVG 生成 + 跨域落地 cookie 捕获
@@ -33,7 +34,7 @@ DiliBownload/
 ├── test/                # node:test + jsdom（WBI 纯函数 / 前端交互回归）
 ├── tools/
 │   └── test-browser-wasm.mjs # 浏览器集成测试（需服务器运行 + 系统 Chrome/Edge）
-└── data/                # 运行时生成：cookies.json（已 gitignore）
+└── data/                # 运行时生成：sessions/（每设备会话）、buvid.json（已 gitignore）
 ```
 
 ## 运行
@@ -65,7 +66,9 @@ npm run test:browser # 浏览器 ffmpeg.wasm 集成测试（先 npm start，需�
 
 ## 说明与限制
 
-- **单用户/本地设计**：会话 cookie 全局共享并持久化到 `data/cookies.json`，多用户部署需按会话隔离。
+- **多设备独立会话**：每个浏览器有自己的 `dili_sid` 会话（httpOnly cookie），服务端按会话隔离存储登录态——不同设备/浏览器各自扫码、各自退出，互不影响。会话数据在 `data/sessions/`（已 gitignore），闲置 30 天自动清理，数量上限 50 个。
+- **登录态失效处理**：会话凭证过期/被撤销时，状态接口会自动检测（平台返回未登录）并清除本地残留，前端显示「登录已失效，请重新扫码」；网络瞬时故障不会误杀登录态（显示「状态未知」并自动重试）。二维码过期会自动刷新新码，扫码成功后服务端立即校验，落地链不完整时自动引导重试。
+- **组件预加载**：进入页面即在后台静默加载浏览器 ffmpeg.wasm（约 30MB，浏览器有缓存后瞬时完成），右下角状态胶囊实时显示「加载中 / 已就绪 / 失败点击重试」。
 - **流量路径**：解析与登录在服务端；选择浏览器合成时，媒体字节经 `/api/ffmpeg/proxy` 流式过一道服务器（CORS/Referer 所限，无法完全绕开），全程不落盘。本机部署时服务器→浏览器为回环传输，不产生额外公网流量。
 - **浏览器合成**：`-c copy` 合并（保持原编码）速度快；转码模式重编码为 H.264+AAC。wasm 单 worker 堆约 2GB，分钟级 720P 实测正常；更长的视频建议复制直链用本地工具处理。
 - **WebGPU**：ffmpeg.wasm 的编码器目前是纯 wasm 实现，浏览器端暂无可用的 GPU 编码后端。
